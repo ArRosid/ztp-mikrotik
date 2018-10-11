@@ -37,6 +37,6 @@ To run this repository, you need some python library installed on your computer.
             <li>python3 ztp_mikrotik.py</li>
         </ul>
     <li>Configure PPPoE Server on ISP</li>
-    <li><i>Add ppp_script_on_up.txt</i> to the on UP script in the PPP Server Profile. Modify the <i>'your_flask_server_ip_address'</i> become your Server IP Address </li>
+    <li><i>Add ppp_script_on_up.txt</i> to the on UP script in the PPP Server Profile. Modify the <i>'your_flask_server_ip_address'</i>. Make sure your flask server can reach PPPoE Client. May be you need to add static route to the PPPoE Client via PPPoE Server </li>
     <li>Configure PPPoE Client on Customer, and see that you will reciev Telegram notification and the customer is provisioned automatically</li>
 </ol>
