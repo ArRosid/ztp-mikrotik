@@ -27,6 +27,8 @@ To run this repository, you need some python library installed on your computer.
         </ul>
     <li>Install requirement library</li>
         <ul>
+            <li>virtualenv -p python3 venv</li>
+            <li>source venv/bin/activate</li>
             <li>pip install -r requirement</li>
         </ul>
     <li>Edit ztp_mikrotik.py. Fill the <i>'your_token'</i> and <i>'your_chat_id'</i></li>
