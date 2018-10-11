@@ -1,0 +1,5 @@
+foreach i in=[/ppp active find where uptime <1m ] do={
+local name [ppp active get value-name=name $i];
+local ipaddr [ppp active get value-name=address $i];
+tool fetch url="http://<your_flask_server_ip_address>:5000/configure" http-method=post http-content-type="application/json" http-data="{\"ip_router\":\"$ipaddr\"}"
+}
