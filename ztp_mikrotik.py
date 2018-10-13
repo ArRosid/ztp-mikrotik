@@ -2,6 +2,8 @@ from flask import Flask, request, jsonify
 import paramiko
 import time
 import telepot
+from librouteros import connect
+import MySQLdb as mdb
 
 app = Flask(__name__)
 
@@ -13,6 +15,7 @@ def configure():
     username = 'admin'
     password = ''
 
+    # connect to router using ssh
     ssh_client = paramiko.SSHClient()
     ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh_client.connect(hostname=ip, username=username, password=password, allow_agent=False, look_for_keys=False)
@@ -36,10 +39,36 @@ def configure():
         ssh_client.exec_command(config)
         time.sleep(0.2)
 
+    # get info from router
+    api = connect(username=username, password=password, host=ip)
+    router_board_info = api(cmd="/system/routerboard/print")
+    identity_info = api(cmd="/system/identity/print")
+
+    identity = identity_info[0]['name']
+    serial_number = router_board_info[0]['serial-number']
+    model = router_board_info[0]['model']
+    version = router_board_info[0]['upgrade-firmware']
+
+    # add info to the database
+    sql_host = 'localhost'
+    sql_username = 'root'
+    sql_password = '***'
+    sql_database = 'ztp_mikrotik'
+
+    sql_conn = mdb.connect(sql_host, sql_username, sql_password, sql_database)
+    cursor = sql_conn.cursor()
+
+    cursor.execute("Use {}".format(sql_database))
+
+    cursor.execute("INSERT INTO customer ({}, {}, {}, {}, {}) VALUES('{}', '{}', '{}', '{}', '{}')".format('identity', 'ip_address', 'serial_number', 'model', 'version', identity, ip, serial_number, model, version))
+
+    sql_conn.commit()
+
+    # send notification to telegram
     telegram_token = '<your_token>'
     chat_id = '<your_chat_id>'
     bot = telepot.Bot(telegram_token)
-    bot.sendMessage(chat_id, 'Sukses konfigurasi {}'.format(ip))
+    bot.sendMessage(chat_id, 'Client Baru UP!\nIdentity: {}\nIP: {}\nSerial Number: {}\nModel: {}\nVersion: {}'.format(identity, ip, serial_number, model, version))
 
     data = {'status': 'ok'}
 
