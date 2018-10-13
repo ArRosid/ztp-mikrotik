@@ -14,6 +14,7 @@ To run this repository, you need some python library installed on your computer.
     <li>flask</li>
     <li>paramiko</li>
     <li>telepot</li>
+    <li>python-mysqldb</li>
 </ul>
 
 
@@ -30,6 +31,7 @@ To run this repository, you need some python library installed on your computer.
             <li>virtualenv -p python3 venv</li>
             <li>source venv/bin/activate</li>
             <li>pip install -r requirement</li>
+            <li>sudo apt-get install python-mysqldb</li>
         </ul>
     <li>Edit ztp_mikrotik.py. Fill the <i>'your_token'</i> and <i>'your_chat_id'</i></li>
     <li>Run the python script</li>
