@@ -15,30 +15,6 @@ def configure():
     username = 'admin'
     password = ''
 
-    # connect to router using ssh
-    ssh_client = paramiko.SSHClient()
-    ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh_client.connect(hostname=ip, username=username, password=password, allow_agent=False, look_for_keys=False)
-
-    config_list = [
-        'ip address add address=192.168.1.1/24 interface=ether2',
-        'ip pool add name=dhcp-server ranges=192.168.1.2-192.168.1.254',
-        'ip dhcp-server add name=dhcp-server interface=ether2 address-pool=dhcp-server disabled=no',
-        'ip dhcp-server network add address=192.168.1.0/24 gateway=192.168.1.1 dns-server=8.8.8.8',
-        'ip firewall nat add chain=srcnat out-interface=pppoe-client action=masquerade',
-        'ip service disable telnet,ftp,www,api,api-ssl',
-        'ip firewall filter add action=drop chain=input comment="drop ssh brute forcers" dst-port=22 protocol=tcp src-address-list=ssh_blacklist',
-        'ip firewall filter add action=add-src-to-address-list address-list=ssh_blacklist address-list-timeout=1w3d chain=input connection-state=new dst-port=22 protocol=tcp src-address-list=ssh_stage3',
-        'ip firewall filter add action=add-src-to-address-list address-list=ssh_stage3 address-list-timeout=1m chain=input connection-state=new dst-port=22 protocol=tcp src-address-list=ssh_stage2',
-        'ip firewall filter add action=add-src-to-address-list address-list=ssh_stage2 address-list-timeout=1m chain=input connection-state=new dst-port=22 protocol=tcp src-address-list=ssh_stage1',
-        'ip firewall filter add action=add-src-to-address-list address-list=ssh_stage1 address-list-timeout=1m chain=input connection-state=new dst-port=22 protocol=tcp',
-        'password old-password="" new-password="idnmantab" confirm-new-password="idnmantab"',
-    ]
-
-    for config in config_list:
-        ssh_client.exec_command(config)
-        time.sleep(0.2)
-
     # get info from router
     api = connect(username=username, password=password, host=ip)
     router_board_info = api(cmd="/system/routerboard/print")
@@ -48,6 +24,41 @@ def configure():
     serial_number = router_board_info[0]['serial-number']
     model = router_board_info[0]['model']
     version = router_board_info[0]['upgrade-firmware']
+
+    # connect to router using ssh
+    ssh_client = paramiko.SSHClient()
+    ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh_client.connect(hostname=ip, username=username, password=password, allow_agent=False, look_for_keys=False)
+
+    config_list = [
+        'ip dns set servers=8.8.8.8',
+        'ip address add address=192.168.1.1/24 interface=ether2',
+        'ip pool add name=dhcp-server ranges=192.168.1.2-192.168.1.254',
+        'ip dhcp-server add name=dhcp-server interface=ether2 address-pool=dhcp-server disabled=no',
+        'ip dhcp-server network add address=192.168.1.0/24 gateway=192.168.1.1 dns-server=8.8.8.8',
+        'ip service disable telnet,ftp,www,api-ssl',
+        'ip firewall nat add chain=srcnat out-interface=pppoe-client action=masquerade',
+        'ip firewall address-list add address=192.168.1.2-192.168.1.10 list=allowed_to_router',
+        'ip firewall address-list add address=10.10.10.1 list=allowed_to_router',
+        'ip firewall filter add action=accept chain=input src-address-list=allowed_to_router',
+        'ip firewall filter add action=accept chain=input protocol=icmp',
+        'ip firewall filter add action=drop chain=input',
+        'ip firewall filter add action=drop chain=forward comment="Drop new connections from internet which are not dst-natted" connection-nat-state=!dstnat connection-state=new in-interface=pppoe-client',
+        'password old-password="" new-password="idnmantab" confirm-new-password="idnmantab"',
+        'user add name=noc password=noc123 disabled=no group=read',
+        'tool bandwidth-server set enabled=no',
+        'system clock set time-zone-name=Asia/Jakarta',
+        'system ntp client set enabled=yes primary-ntp=202.162.32.12',
+        'tool mac-server set allowed-interface-list=none',
+        'tool mac-server mac-winbox set allowed-interface-list=none',
+        'tool mac-server ping set enabled=no',
+        'ip neighbor discovery-settings set discover-interface-list=none',
+    ]
+
+    # configure router
+    for config in config_list:
+        ssh_client.exec_command(config)
+        time.sleep(0.2)
 
     # add info to the database
     sql_host = 'localhost'
